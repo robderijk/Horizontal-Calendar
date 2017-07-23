@@ -38,6 +38,8 @@ public class HorizontalCalendar {
     private Date dateStartCalendar;
     private Date dateEndCalendar;
 
+    private AsyncTask mUpdateDatesAsyncTask;
+
     //Interface events
     private HorizontalCalendarListener calendarListener;
     private final RecyclerView.OnScrollListener onScrollListener = new RecyclerView.OnScrollListener() {
@@ -108,8 +110,6 @@ public class HorizontalCalendar {
         this.textSizeDayNumber = builder.textSizeDayNumber;
         this.textSizeDayName = builder.textSizeDayName;
         this.numberOfDatesOnScreen = builder.numberOfDatesOnScreen;
-        this.dateStartCalendar = builder.dateStartCalendar;
-        this.dateEndCalendar = builder.dateEndCalendar;
         this.showDayName = builder.showDayName;
         this.showMonthName = builder.showMonthName;
 
@@ -126,12 +126,13 @@ public class HorizontalCalendar {
         calendarView.setHasFixedSize(true);
         calendarView.setHorizontalScrollBarEnabled(false);
         calendarView.setHorizontalCalendar(this);
+        calendarView.addOnScrollListener(onScrollListener);
+        calendarView.setLayoutManager(new HorizontalLayoutManager(calendarView.getContext(), false));
 
         LinearSnapHelper snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(calendarView);
 
         hide();
-        new InitializeDatesList().execute();
     }
 
     public HorizontalCalendarListener getCalendarListener() {
@@ -142,11 +143,24 @@ public class HorizontalCalendar {
         this.calendarListener = calendarListener;
     }
 
+    public void setDateRange(Date startDate, Date endDate) {
+        if (mUpdateDatesAsyncTask != null) {
+            mUpdateDatesAsyncTask.cancel(true);
+        }
+
+        this.dateStartCalendar = startDate;
+        this.dateEndCalendar = endDate;
+
+        hide();
+        mUpdateDatesAsyncTask = new UpdateDatesListAsyncTask().execute();
+    }
+
     /**
      * Select today date and center the Horizontal Calendar to this date
      *
-     * @param immediate pass true to make the calendar scroll as fast as possible to reach the date of today
-     * ,or false to play default scroll animation speed.
+     * @param immediate pass true to make the calendar scroll as fast as possible to reach the date
+     *                  of today
+     *                  ,or false to play default scroll animation speed.
      */
     public void goToday(boolean immediate) {
         selectDate(new Date(), immediate);
@@ -155,9 +169,10 @@ public class HorizontalCalendar {
     /**
      * Select the date and center the Horizontal Calendar to this date
      *
-     * @param date The date to select
-     * @param immediate pass true to make the calendar scroll as fast as possible to reach the target date
-     * ,or false to play default scroll animation speed.
+     * @param date      The date to select
+     * @param immediate pass true to make the calendar scroll as fast as possible to reach the
+     *                  target date
+     *                  ,or false to play default scroll animation speed.
      */
     public void selectDate(Date date, boolean immediate) {
         if (loading) {
@@ -247,7 +262,6 @@ public class HorizontalCalendar {
     /**
      * @param position The position of date
      * @return the date on this index
-     * @throws IndexOutOfBoundsException
      */
     public Date getDateAt(int position) throws IndexOutOfBoundsException {
         return mCalendarAdapter.getItem(position);
@@ -378,10 +392,6 @@ public class HorizontalCalendar {
         final int viewId;
         final View rootView;
 
-        //Start & End Dates
-        Date dateStartCalendar;
-        Date dateEndCalendar;
-
         //Number of Days to Show on Screen
         int numberOfDatesOnScreen;
 
@@ -400,7 +410,7 @@ public class HorizontalCalendar {
 
         /**
          * @param rootView pass the rootView for the Fragment where HorizontalCalendar is attached
-         * @param viewId the id specified for HorizontalCalendarView in your layout
+         * @param viewId   the id specified for HorizontalCalendarView in your layout
          */
         public Builder(View rootView, int viewId) {
             this.rootView = rootView;
@@ -409,7 +419,7 @@ public class HorizontalCalendar {
 
         /**
          * @param activity pass the activity where HorizontalCalendar is attached
-         * @param viewId the id specified for HorizontalCalendarView in your layout
+         * @param viewId   the id specified for HorizontalCalendarView in your layout
          */
         public Builder(Activity activity, int viewId) {
             this.rootView = activity.getWindow().getDecorView();
@@ -418,16 +428,6 @@ public class HorizontalCalendar {
 
         public Builder defaultSelectedDate(Date date) {
             defaultSelectedDate = date;
-            return this;
-        }
-
-        public Builder startDate(Date dateStartCalendar) {
-            this.dateStartCalendar = dateStartCalendar;
-            return this;
-        }
-
-        public Builder endDate(Date dateEndCalendar) {
-            this.dateEndCalendar = dateEndCalendar;
             return this;
         }
 
@@ -547,23 +547,13 @@ public class HorizontalCalendar {
             if ((formatMonth == null) && showMonthName) {
                 formatMonth = "MMM";
             }
-            if (dateStartCalendar == null) {
-                Calendar c = Calendar.getInstance();
-                c.add(Calendar.MONTH, -1);
-                dateStartCalendar = c.getTime();
-            }
-            if (dateEndCalendar == null) {
-                Calendar c2 = Calendar.getInstance();
-                c2.add(Calendar.MONTH, 1);
-                dateEndCalendar = c2.getTime();
-            }
-            if (defaultSelectedDate == null){
+            if (defaultSelectedDate == null) {
                 defaultSelectedDate = new Date();
             }
         }
     }
 
-    private class InitializeDatesList extends AsyncTask<Void, Void, Void> {
+    private class UpdateDatesListAsyncTask extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected void onPreExecute() {
@@ -573,6 +563,8 @@ public class HorizontalCalendar {
 
         @Override
         protected Void doInBackground(Void... params) {
+            mListDays = new ArrayList<>();
+
             //ArrayList of dates is set with all the dates between
             //start and end date
             GregorianCalendar calendar = new GregorianCalendar();
@@ -586,6 +578,8 @@ public class HorizontalCalendar {
 
             Date date = dateStartBefore;
             while (!date.after(dateEndAfter)) {
+                if (isCancelled()) break;
+
                 mListDays.add(date);
                 calendar.setTime(date);
                 calendar.add(Calendar.DATE, 1);
@@ -599,13 +593,14 @@ public class HorizontalCalendar {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
 
-            mCalendarAdapter = new HorizontalCalendarAdapter(calendarView, mListDays);
-            calendarView.setAdapter(mCalendarAdapter);
-            calendarView.setLayoutManager(new HorizontalLayoutManager(calendarView.getContext(), false));
+            if (!isCancelled()) {
+                mCalendarAdapter = new HorizontalCalendarAdapter(calendarView, mListDays);
+                calendarView.setAdapter(mCalendarAdapter);
 
-            show();
-            handler.sendMessage(new Message());
-            calendarView.addOnScrollListener(onScrollListener);
+                show();
+
+                handler.sendMessage(new Message());
+            }
         }
     }
 

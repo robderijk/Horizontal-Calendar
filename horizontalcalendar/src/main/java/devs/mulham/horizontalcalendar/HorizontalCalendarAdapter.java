@@ -22,7 +22,7 @@ import java.util.Date;
  *
  * @author Mulham-Raee
  * @version 1.1
- * See {devs.mulham.horizontalcalendar.R.layout#item_calendar} Calendar CustomItem Layout
+ *          See {devs.mulham.horizontalcalendar.R.layout#item_calendar} Calendar CustomItem Layout
  */
 class HorizontalCalendarAdapter extends RecyclerView.Adapter<HorizontalCalendarAdapter.DayViewHolder> {
 
@@ -54,14 +54,14 @@ class HorizontalCalendarAdapter extends RecyclerView.Adapter<HorizontalCalendarA
         holder.rootView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(holder.getAdapterPosition() == -1)
+                if (holder.getAdapterPosition() == -1)
                     return;
 
                 Date date = datesList.get(holder.getAdapterPosition());
 
                 if (!date.before(horizontalCalendar.getDateStartCalendar())
                         && !date.after(horizontalCalendar.getDateEndCalendar())) {
-                    horizontalCalendarView.setSmoothScrollSpeed(HorizontalLayoutManager.SPEED_SLOW);
+                    horizontalCalendarView.setSmoothScrollSpeed(HorizontalLayoutManager.SPEED_NORMAL);
                     horizontalCalendar.centerCalendarToPosition(holder.getAdapterPosition());
                 }
             }
