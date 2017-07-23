@@ -91,6 +91,7 @@ public class HorizontalCalendar {
 
     private final boolean showMonthName;
     private final boolean showDayName;
+    private final boolean hideUnselectableDays;
     //endregion
 
     /**
@@ -112,6 +113,7 @@ public class HorizontalCalendar {
         this.numberOfDatesOnScreen = builder.numberOfDatesOnScreen;
         this.showDayName = builder.showDayName;
         this.showMonthName = builder.showMonthName;
+        this.hideUnselectableDays = builder.hideUnselectableDays;
 
         handler = new DateHandler(this, builder.defaultSelectedDate);
     }
@@ -404,6 +406,7 @@ public class HorizontalCalendar {
         int selectorColor;
         float textSizeMonthName, textSizeDayNumber, textSizeDayName;
 
+        boolean hideUnselectableDays = false;
         boolean showMonthName = true;
         boolean showDayName = true;
         Date defaultSelectedDate;
@@ -464,6 +467,11 @@ public class HorizontalCalendar {
 
         public Builder selectorColor(int selectorColor) {
             this.selectorColor = selectorColor;
+            return this;
+        }
+
+        public Builder hideUnselectableDays(boolean hide) {
+            hideUnselectableDays = hide;
             return this;
         }
 
@@ -594,7 +602,7 @@ public class HorizontalCalendar {
             super.onPostExecute(aVoid);
 
             if (!isCancelled()) {
-                mCalendarAdapter = new HorizontalCalendarAdapter(calendarView, mListDays);
+                mCalendarAdapter = new HorizontalCalendarAdapter(calendarView, mListDays, hideUnselectableDays);
                 calendarView.setAdapter(mCalendarAdapter);
 
                 show();

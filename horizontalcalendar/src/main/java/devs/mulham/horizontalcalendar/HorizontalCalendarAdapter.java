@@ -27,16 +27,18 @@ import java.util.Date;
 class HorizontalCalendarAdapter extends RecyclerView.Adapter<HorizontalCalendarAdapter.DayViewHolder> {
 
     private final Context context;
+    private final boolean hideUnselectableDays;
     private ArrayList<Date> datesList;
     private int widthCell;
     private HorizontalCalendar horizontalCalendar;
     private int numberOfDates;
     private HorizontalCalendarView horizontalCalendarView;
 
-    HorizontalCalendarAdapter(HorizontalCalendarView horizontalCalendarView, ArrayList<Date> datesList) {
+    HorizontalCalendarAdapter(HorizontalCalendarView horizontalCalendarView, ArrayList<Date> datesList, boolean hideUnselectableDays) {
         this.horizontalCalendarView = horizontalCalendarView;
         this.context = horizontalCalendarView.getContext();
         this.datesList = datesList;
+        this.hideUnselectableDays = hideUnselectableDays;
         this.horizontalCalendar = horizontalCalendarView.getHorizontalCalendar();
         this.numberOfDates = horizontalCalendar.getNumberOfDatesOnScreen();
         calculateCellWidth();
@@ -86,6 +88,14 @@ class HorizontalCalendarAdapter extends RecyclerView.Adapter<HorizontalCalendarA
     public void onBindViewHolder(DayViewHolder holder, int position) {
         Date day = datesList.get(position);
         int selectedItemPosition = horizontalCalendar.getSelectedDatePosition();
+
+        int unselectableDayCount = (int) Math.floor(numberOfDates / 2);
+        if (hideUnselectableDays && (position >= getItemCount() - unselectableDayCount || position < unselectableDayCount)) {
+            holder.rootView.setVisibility(View.INVISIBLE);
+            return;
+        } else {
+            holder.rootView.setVisibility(View.VISIBLE);
+        }
 
         // Selected Day
         if (position == selectedItemPosition) {
