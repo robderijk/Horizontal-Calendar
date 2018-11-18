@@ -28,7 +28,7 @@ ext {
 version = libraryVersion
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 28
     buildToolsVersion '27.0.3'
 
     lintOptions {
@@ -37,7 +37,7 @@ android {
 
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName version
     }
@@ -51,8 +51,8 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:25.2.0'
-    compile 'com.android.support:recyclerview-v7:25.2.0'
+    compile 'com.android.support:appcompat-v7:28.0.0'
+    compile 'com.android.support:recyclerview-v7:28.0.0'
 }
 
 
